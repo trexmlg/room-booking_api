@@ -1,6 +1,6 @@
 # Room Booking API
 
-## Projekta apraksts
+Laravel aplikācija telpu rezervāciju pārvaldībai ar REST API un web interfeisu.
 
 
 
@@ -14,21 +14,121 @@ php artisan migrate:fresh --seed
 php artisan serve
 ```
 
-Konfigurē MySQL pieslēgumu `.env` failā. `.env` failu repozitorijā nepublicē.
+Konfigurē MySQL datubāzi `.env` failā.
+
+## API drošība
+
+Visiem API pieprasījumiem jānosūta `X-API-Key` galvene.
+
+```env
+API_KEY=your-very-strong-secret-key
+```
+
+Piemērs:
+
+```bash
+curl -H "X-API-Key: your-very-strong-secret-key" \
+  http://localhost:8000/api/rooms
+```
+
+Ja galvene trūkst vai ir nepareiza, API atgriež `401`.
 
 ## API endpointi
 
+### Telpas
+
 | Metode | Endpoint | Apraksts |
 |---|---|---|
-| GET | `/api/rooms` | Aktīvās telpas |
+| GET | `/api/rooms` | Aktīvo telpu saraksts |
 | POST | `/api/rooms` | Izveidot telpu |
-| GET | `/api/rooms/{room}` | Viena telpa |
-| GET | `/api/rooms/{room}/schedule/{date}` | Dienas grafiks (`YYYY-MM-DD`) |
-| POST | `/api/bookings` | Izveidot rezervāciju |
-| GET | `/api/rooms/{room}/current` | Pašreizējais telpas statuss |
+| GET | `/api/rooms/{room}` | Vienas telpas dati |
+| PUT | `/api/rooms/{room}` | Rediģēt telpu |
+| DELETE | `/api/rooms/{room}` | Dzēst telpu |
+| GET | `/api/rooms/{room}/schedule/{date}` | Rezervācijas konkrētai dienai |
+| GET | `/api/rooms/{room}/current` | Vai telpa šobrīd ir aizņemta |
 | GET | `/api/rooms/{room}/upcoming` | Nākamās 5 rezervācijas |
 
-Visi API pieprasījumi un atbildes izmanto JSON. Ja rezervācijas laiks pārklājas ar esošu rezervāciju, API atgriež validācijas kļūdu un rezervācija netiek saglabāta.
+### Rezervācijas
+
+| Metode | Endpoint | Apraksts |
+|---|---|---|
+| POST | `/api/bookings` | Izveidot rezervāciju |
+| GET | `/api/bookings/{booking}` | Vienas rezervācijas dati |
+| PUT | `/api/bookings/{booking}` | Rediģēt rezervāciju |
+| DELETE | `/api/bookings/{booking}` | Dzēst rezervāciju |
+
+## Piemēri
+
+### Izveidot telpu
+
+```bash
+curl -X POST http://localhost:8000/api/rooms \
+  -H "X-API-Key: your-very-strong-secret-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Meeting Room A",
+    "capacity": 10,
+    "location": "2nd Floor"
+  }'
+```
+
+### Izveidot rezervāciju
+
+```bash
+curl -X POST http://localhost:8000/api/bookings \
+  -H "X-API-Key: your-very-strong-secret-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "room_id": 1,
+    "title": "Development Team Meeting",
+    "booked_by": "Toms",
+    "starts_at": "2026-10-05 10:00:00",
+    "ends_at": "2026-10-05 11:00:00"
+  }'
+```
+
+### Rediģēt rezervāciju
+
+```bash
+curl -X PUT http://localhost:8000/api/bookings/1 \
+  -H "X-API-Key: your-very-strong-secret-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Updated Meeting",
+    "ends_at": "2026-10-05 12:00:00"
+  }'
+```
+
+## Kā darbojas kods
+
+Projekts ir Laravel MVC aplikācija.
+
+- `routes/api.php` — definē API maršrutus
+- `app/Http/Controllers/Api/*` — API loģika
+- `app/Models/Room.php` — telpu modelis
+- `app/Models/Booking.php` — rezervāciju modelis
+- `database/migrations/` — tabulu shēmas
+- `database/seeders/` — demo dati
+
+### Kāpēc šeit ir `API key`
+
+Šis projekts ir neliels iekšējais / skriptu bāzes serviss. Tam nav lietotāju login sistēmas vai JWT auth, tāpēc vienkāršs `X-API-Key` ir labs kompromiss:
+- ātri ieviešams
+- vienkārši konfigurējams
+- pietiekami drošs iekšējai lietošanai
+- neietver daudz papildu kodu
+
+### Kāpēc ir pārklāšanās validācija
+
+Rezervāciju validācijā tiek pārbaudīts, vai konkrētā telpa jau nav aizņemta konkrētajā laika periodā. Tas novērš dubulto rezervēšanu.
+
+## Web interfeiss
+
+Pēc `php artisan serve` var atvērt:
+
+- `/` — pārskats
+- `/rooms` — telpas
+- `/bookings` — rezervācijas
 
 ## Testa dati
 
@@ -36,31 +136,18 @@ Visi API pieprasījumi un atbildes izmanto JSON. Ja rezervācijas laiks pārklā
 php artisan migrate:fresh --seed
 ```
 
-Seeder izveido 5 telpas un 15 rezervācijas.
-
-## Web saskarne
-
-Pēc `php artisan serve` palaišanas atver:
-
-- `/` — pārskats
-- `/rooms` — telpas
-- `/bookings` — rezervācijas
-
-## Piemērs
-
-```json
-{
-  "room_id": 1,
-  "title": "Development Team Meeting",
-  "booked_by": "Toms",
-  "starts_at": "2026-10-05 10:00:00",
-  "ends_at": "2026-10-05 11:00:00"
-}
-```
+Seeds izveido demo telpas un rezervācijas, lai varētu tūlīt testēt funkcionalitāti.
 
 ## Tehnoloģijas
 
 - PHP 8.1+
 - Laravel 10
 - MySQL
-- JSON REST API
+- Vite / Blade
+
+## Nākamie soļi
+
+- pievienot lietotāju autentifikāciju
+- pievienot role-based permissions
+- uzlabot rezervāciju notifikācijas
+- izveidot kalendāra skatu
