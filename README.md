@@ -2,13 +2,7 @@
 
 Laravel aplikācija telpu rezervāciju pārvaldībai ar REST API un web interfeisu.
 
-## Kas šis ir
 
-Šis projekts ļauj:
-- pārvaldīt telpas
-- izveidot, rediģēt un dzēst rezervācijas
-- pārbaudīt telpas pieejamību konkrētā datumā un laikā
-- izmantot JSON API no citas aplikācijas vai skripta
 
 ## Uzstādīšana
 
