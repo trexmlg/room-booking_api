@@ -2,7 +2,7 @@
 
 ## Projekta apraksts
 
-<!-- Šeit vari ierakstīt sava projekta īso aprakstu. -->
+
 
 ## Uzstādīšana
 
